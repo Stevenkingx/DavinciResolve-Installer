@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+
+# DaVinci Resolve packages: these are 10+ GB, they never belong in git
+*.zip
+*.run
+
+# Editores
+.vscode/
+.idea/
+*.swp
