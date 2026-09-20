@@ -22,6 +22,16 @@ Blackmagic onto the window and it takes care of the rest.
 
 ---
 
+## Watch it in three minutes
+
+[![Watch the tutorial](docs/video-poster.png)](https://github.com/Stevenkingx/DavinciResolve-Installer/releases/download/v1.0.0/DaVinci-Resolve-Manager-tutorial.mp4)
+
+**[▶ Watch the tutorial](https://github.com/Stevenkingx/DavinciResolve-Installer/releases/download/v1.0.0/DaVinci-Resolve-Manager-tutorial.mp4)** — 1080p, English narration, 3:15. It walks
+through the error you are probably hitting, why it happens, and the whole
+install from dropping the zip to opening Resolve.
+
+---
+
 ## What it does
 
 **Installs from scratch and updates with the same gesture.** It detects which
