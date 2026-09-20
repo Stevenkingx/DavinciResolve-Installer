@@ -69,3 +69,30 @@ Requires `ffmpeg`, `Pillow`, PyQt6, and the Inter and Noto Sans Mono fonts.
    noticeably faster or slower than the others.
 4. If the app itself supports the language, that is all: `render_app.py` takes
    its screenshots through the app's own translation layer.
+
+## Thumbnails
+
+Four concepts per language, all 1280×720 and under YouTube's 2 MB limit, in
+[`docs/thumbnails/`](../docs/thumbnails).
+
+| Concept | How it is made | Trade-off |
+|---|---|---|
+| `graphic` | `ai_thumbs.py` — gpt-image-2.5 generates the whole frame, text included | The punchiest, but the app window in it is invented, not the real UI |
+| `photo` | `ai_thumbs.py` — a photographic colour-grading suite with overlaid type | Most "YouTube", has a human in frame; the error on the monitor is invented too |
+| `hybrid` | `ai_hybrid.py` — generated background and typography, **real** app screenshot composited on the right | Honest product shot, but the real UI's text is small at thumbnail size |
+| `flat` | `make_thumbnail.py` — drawn entirely with Pillow, no generated imagery | Fully reproducible and under your control; plainer |
+
+```bash
+python3 ai_thumbs.py                 # all four generated variants
+python3 ai_hybrid.py    es           # generated background + real screenshot
+python3 make_thumbnail.py es         # the hand-drawn one
+```
+
+The generated ones need `OPENAI_API_KEY`. `make_thumbnail.py` needs nothing but
+the rendered app assets, so it always works offline.
+
+**One thing to know before publishing:** in the `graphic` and `photo` concepts
+the on-screen interface and error text are invented by the image model — they
+look plausible but they are not this app's real UI. That is ordinary thumbnail
+stylisation, but if you would rather show only the real thing, use `hybrid` or
+`flat`.
