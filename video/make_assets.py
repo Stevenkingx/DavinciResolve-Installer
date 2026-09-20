@@ -9,8 +9,14 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from script import language          # noqa: E402
+
 ROOT = Path(__file__).resolve().parent
-OUT = ROOT / "assets"
+LANG = language()
+OUT = ROOT / "assets" / LANG
 
 INTER = "/usr/share/fonts/rsms-inter-fonts/Inter-{}.ttf"
 DISPLAY = "/usr/share/fonts/rsms-inter-fonts/InterDisplay-{}.ttf"
@@ -102,24 +108,37 @@ def terminal_error() -> Image.Image:
     return terminal(lines, width=1280)
 
 
+# install.sh es bilingüe: esto es su salida real en cada idioma.
+INSTALL_OUTPUT = {
+    "en": ["Cloning into 'DavinciResolve-Installer'...",
+           "  Installing DaVinci Resolve Manager",
+           "python3 3.14", "PyQt6 available", "Command installed",
+           "Icon generated", "Menu entry created",
+           "Done. Look for it in your applications menu."],
+    "es": ["Cloning into 'DavinciResolve-Installer'...",
+           "  Instalando DaVinci Resolve Manager",
+           "python3 3.14", "PyQt6 disponible", "Comando instalado",
+           "Icono generado", "Entrada de menú creada",
+           "Listo. Búscalo en tu menú de aplicaciones."],
+}
+
+
 def terminal_install() -> Image.Image:
+    clone, heading, *steps = INSTALL_OUTPUT[LANG]
     lines = [
         ("$ git clone https://github.com/Stevenkingx/DavinciResolve-Installer.git",
          TEXT, True),
-        ("Cloning into 'DavinciResolve-Installer'...", FAINT, False),
+        (clone, FAINT, False),
         ("$ cd DavinciResolve-Installer", TEXT, True),
         ("$ ./install.sh", TEXT, True),
         ("", MUTED, False),
-        ("  Installing DaVinci Resolve Manager", MUTED, False),
+        (heading, MUTED, False),
         ("", MUTED, False),
-        ("  ✓ python3 3.14", GREEN, False),
-        ("  ✓ PyQt6 available", GREEN, False),
-        ("  ✓ Command installed", GREEN, False),
-        ("  ✓ Icon generated", GREEN, False),
-        ("  ✓ Menu entry created", GREEN, False),
-        ("", MUTED, False),
-        ("  ✓ Done. Look for it in your applications menu.", GREEN, False),
     ]
+    for step in steps[:-1]:
+        lines.append((f"  ✓ {step}", GREEN, False))
+    lines.append(("", MUTED, False))
+    lines.append((f"  ✓ {steps[-1]}", GREEN, False))
     return terminal(lines, width=1320)
 
 
@@ -129,17 +148,30 @@ def terminal_install() -> Image.Image:
 
 def three_problems() -> Image.Image:
     width, card_h, gap = 1500, 168, 22
-    items = [
-        ("01", "The package check is wrong", ACCENT,
-         "It looks for a package called zlib. Fedora ships zlib-ng-compat,\n"
-         "so the installer aborts before it starts."),
-        ("02", "The GPU runtime is missing", BLUE,
-         "Radeon cards need ROCm, NVIDIA needs the proprietary driver and CUDA.\n"
-         "Without it Resolve reports “no GPU detected”."),
-        ("03", "Bundled libraries clash", RED,
-         "Resolve ships old copies of libglib, libgio and libgmodule that make it\n"
-         "quit when you export or open a file dialog."),
-    ]
+    items = {
+        "en": [
+            ("01", "The package check is wrong", ACCENT,
+             "It looks for a package called zlib. Fedora ships zlib-ng-compat,\n"
+             "so the installer aborts before it starts."),
+            ("02", "The GPU runtime is missing", BLUE,
+             "Radeon cards need ROCm, NVIDIA needs the proprietary driver and CUDA.\n"
+             "Without it Resolve reports “no GPU detected”."),
+            ("03", "Bundled libraries clash", RED,
+             "Resolve ships old copies of libglib, libgio and libgmodule that make it\n"
+             "quit when you export or open a file dialog."),
+        ],
+        "es": [
+            ("01", "La comprobación de paquetes está mal", ACCENT,
+             "Busca un paquete llamado zlib. Fedora lo distribuye como\n"
+             "zlib-ng-compat, así que el instalador aborta antes de empezar."),
+            ("02", "Falta el runtime de la GPU", BLUE,
+             "Las Radeon necesitan ROCm; NVIDIA, el driver propietario y CUDA.\n"
+             "Sin eso, Resolve dice «no GPU detected»."),
+            ("03", "Las librerías que trae dentro chocan", RED,
+             "Resolve incluye copias antiguas de libglib, libgio y libgmodule que\n"
+             "lo cierran al exportar o al abrir un diálogo de archivos."),
+        ],
+    }[LANG]
     height = len(items) * card_h + (len(items) - 1) * gap
     img = Image.new("RGBA", (width, height), (0, 0, 0, 0))
 
@@ -170,7 +202,9 @@ def outro() -> Image.Image:
 
     draw.text((width // 2, 40), "DaVinci Resolve Manager",
               font=font(DISPLAY, "Bold", 62), fill=TEXT, anchor="ma")
-    draw.text((width // 2, 128), "Install · Update · Repair",
+    subtitle = {"en": "Install · Update · Repair",
+                "es": "Instalar · Actualizar · Reparar"}[LANG]
+    draw.text((width // 2, 128), subtitle,
               font=font(INTER, "Regular", 30), fill=MUTED, anchor="ma")
 
     url = "github.com/Stevenkingx/DavinciResolve-Installer"
@@ -180,7 +214,9 @@ def outro() -> Image.Image:
     ImageDraw.Draw(box).text((box_w // 2, 39), url, font=url_f, fill=ACCENT, anchor="mm")
     img.paste(box, ((width - box_w) // 2, 210), box)
 
-    chips = ["Free & open source", "MIT licence", "English · Español"]
+    chips = {"en": ["Free & open source", "MIT licence", "English · Español"],
+             "es": ["Gratuito y de código abierto", "Licencia MIT",
+                    "English · Español"]}[LANG]
     chip_f = font(INTER, "Medium", 22)
     widths = [int(draw.textlength(c, font=chip_f)) + 44 for c in chips]
     x = (width - sum(widths) - 16 * (len(chips) - 1)) // 2
@@ -201,7 +237,7 @@ def main() -> int:
                           ("outro", outro)):
         image = builder()
         image.save(OUT / f"{name}.png")
-        print(f"  {name}.png  {image.size}")
+        print(f"  [{LANG}] {name}.png  {image.size}")
     return 0
 
 

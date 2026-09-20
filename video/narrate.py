@@ -10,12 +10,23 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from script import SCENES
+from script import language, scenes
 
 ROOT = Path(__file__).resolve().parent
-AUDIO = ROOT / "audio"
-VOICE_ID = "Xb7hH8MSUJpSbSDYk0k2"      # Alice — Clear, Engaging Educator
+LANG = language()
+AUDIO = ROOT / "audio" / LANG
 MODEL = "eleven_multilingual_v2"
+
+VOICES = {
+    "en": "Xb7hH8MSUJpSbSDYk0k2",   # Alice — Clear, Engaging Educator
+    "es": "hHjbwzYZW17oh0p05AKv",   # Gabriela — Spanish from Mexico, Professional
+}
+VOICE_ID = VOICES[LANG]
+
+# Ajuste de ritmo. Gabriela narra a ~115 palabras por minuto, bastante por
+# debajo de las 130-150 habituales en una locución en español; un 10% con
+# atempo lo deja natural sin tocar el tono.
+SPEED = {"en": 1.0, "es": 1.10}[LANG]
 
 
 def api_key() -> str:
@@ -55,6 +66,18 @@ def synthesize(text: str, target: Path, key: str) -> None:
             time.sleep(3 * (attempt + 1))
 
 
+def retime(source: Path, target: Path, speed: float) -> None:
+    """Copia `source` en `target` ajustando el ritmo, sin alterar el tono."""
+    if abs(speed - 1.0) < 0.001:
+        target.write_bytes(source.read_bytes())
+        return
+    subprocess.run(
+        ["ffmpeg", "-y", "-v", "error", "-i", str(source),
+         "-filter:a", f"atempo={speed:.3f}", "-b:a", "192k", str(target)],
+        check=True,
+    )
+
+
 def duration(path: Path) -> float:
     out = subprocess.run(
         ["ffprobe", "-v", "error", "-show_entries", "format=duration",
@@ -70,10 +93,17 @@ def main() -> int:
     timings = {}
     total = 0.0
 
-    for scene in SCENES:
+    raw_dir = AUDIO / "raw"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+
+    for scene in scenes(LANG):
+        # El audio crudo se guarda aparte y se cachea: así reajustar el ritmo
+        # no gasta otra llamada a la API.
+        raw = raw_dir / f"{scene['id']}.mp3"
         target = AUDIO / f"{scene['id']}.mp3"
-        if not target.exists() or "--force" in sys.argv:
-            synthesize(scene["text"], target, key)
+        if not raw.exists() or "--force" in sys.argv:
+            synthesize(scene["text"], raw, key)
+        retime(raw, target, SPEED)
         seconds = duration(target)
         timings[scene["id"]] = seconds
         total += seconds
@@ -82,7 +112,7 @@ def main() -> int:
               f"{words / seconds * 60:5.1f} ppm)")
 
     (AUDIO / "timings.json").write_text(json.dumps(timings, indent=2))
-    print(f"\nlocución total: {total:.1f}s ({total / 60:.2f} min)")
+    print(f"\n[{LANG}] locución total: {total:.1f}s ({total / 60:.2f} min)")
     return 0
 
 

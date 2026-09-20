@@ -16,12 +16,15 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-from script import REPO, SCENES
+from script import LABELS, language, scenes
 
 ROOT = Path(__file__).resolve().parent
-ASSETS = ROOT / "assets"
-AUDIO = ROOT / "audio"
-OUT = ROOT / "DaVinci-Resolve-Manager-tutorial.mp4"
+LANG = language()
+SCENES = scenes(LANG)
+TEXT_LABELS = LABELS[LANG]
+ASSETS = ROOT / "assets" / LANG
+AUDIO = ROOT / "audio" / LANG
+OUT = ROOT / f"DaVinci-Resolve-Manager-tutorial-{LANG}.mp4"
 
 W, H, FPS = 1920, 1080, 30
 LEAD, TAIL = 0.30, 0.60      # silencio antes y después de cada locución
@@ -231,7 +234,7 @@ class Stage:
             # Recuadro sobre la línea de "zlib".
             draw.rounded_rectangle([64, 250, 140, 284], 6,
                                    outline=(255, 181, 63, int(255 * appear)), width=3)
-            label = "Fedora ships this as  zlib-ng-compat"
+            label = TEXT_LABELS["annotation"]
             small = font(INTER, "SemiBold", 21)
             width = int(draw.textlength(label, font=small)) + 40
             x, y = 190, 248
@@ -395,7 +398,8 @@ def main() -> int:
     total = sum(durations)
     frames_total = int(total * FPS)
 
-    print(f"  {len(SCENES)} escenas · {total:.1f}s · {frames_total} fotogramas")
+    print(f"  [{LANG}] {len(SCENES)} escenas · {total:.1f}s · "
+          f"{frames_total} fotogramas")
     wav = build_audio(timings)
     print(f"  audio montado: {wav.name}")
 

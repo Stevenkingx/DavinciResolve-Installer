@@ -15,11 +15,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 APP = ROOT.parent / "resolve-manager"
-OUT = ROOT / "assets"
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(APP))
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 
 from PyQt6.QtWidgets import QApplication            # noqa: E402
+
+from script import language                         # noqa: E402
+
+LANG = language()
+OUT = ROOT / "assets" / LANG
 
 from resolve_manager import i18n                    # noqa: E402
 from resolve_manager.core import fixes as fx        # noqa: E402
@@ -76,13 +81,13 @@ def demo_plan(window, report):
 
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
-    timings = json.loads((ROOT / "audio" / "timings.json").read_text())
+    timings = json.loads((ROOT / "audio" / LANG / "timings.json").read_text())
 
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     app.setFont(theme.ui_font(10))
     app.setStyleSheet(theme.stylesheet())
-    i18n.set_language("en")
+    i18n.set_language(LANG)
 
     report = system.collect()
     fresh = clean_machine(report)
